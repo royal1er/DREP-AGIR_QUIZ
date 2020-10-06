@@ -1,191 +1,138 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_task_planner_app/dates_list.dart';
-import 'package:flutter_task_planner_app/theme/colors/light_colors.dart';
-import 'package:flutter_task_planner_app/widgets/calendar_dates.dart';
-import 'package:flutter_task_planner_app/widgets/task_container.dart';
-import 'package:flutter_task_planner_app/screens/create_new_task_page.dart';
-import 'package:flutter_task_planner_app/widgets/back_button.dart';
+import 'dart:convert';
 
-class CalendarPage extends StatelessWidget {
-  Widget _dashedText() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 15),
-      child: Text(
-        '------------------------------------------',
-        maxLines: 1,
-        style:
-            TextStyle(fontSize: 20.0, color: Colors.black12, letterSpacing: 5),
-      ),
-    );
+import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
+class CalendarPage extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return new
+    _CalendarPage();
+  }
+}
+
+class _CalendarPage extends State<CalendarPage>{
+  CalendarController _controller;
+  Map<DateTime,List<dynamic>> _events;
+  List<dynamic> _selectedEvents;
+  TextEditingController _eventController;
+  SharedPreferences prefs;
+  @override
+  void initState() {
+    super.initState();
+    _controller = CalendarController();
+    _eventController = TextEditingController();
+    _events = {};
+    _selectedEvents = [];
+    initPrefs();
+  }
+
+  initPrefs() async{
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _events = Map<DateTime,List<dynamic>>.from(decodeMap(jsonDecode(prefs.getString('events') ?? "{}")));
+    });
+  }
+  Map<String,dynamic> encodeMap(Map<DateTime,dynamic> map){
+    Map<String,dynamic> newMap = {};
+    map.forEach((key,value){
+      newMap[key.toString()] = map[key];
+    });
+    return newMap;
+  }
+
+  Map<DateTime,dynamic> decodeMap(Map<String,dynamic> map){
+    Map<DateTime,dynamic> newMap = {};
+    map.forEach((key,value){
+      newMap[DateTime.parse(key)] = map[key];
+    });
+    return newMap;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LightColors.kLightYellow,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            0,
-          ),
-          child: Column(
-            children: <Widget>[
-              MyBackButton(),
-              SizedBox(height: 30.0),
-              Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      'Today',
-                      style: TextStyle(
-                          fontSize: 30.0, fontWeight: FontWeight.w700),
-                    ),
-                    Container(
-                      height: 40.0,
-                      width: 120,
-                      decoration: BoxDecoration(
-                        color: LightColors.kGreen,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: FlatButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateNewTaskPage(),
-                            ),
-                          );
-                        },
-                        child: Center(
-                          child: Text(
-                            'Add task',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ]),
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Productive Day, Sourav',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 30),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'April, 2020',
-                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            TableCalendar(
+              events: _events,
+              initialCalendarFormat: CalendarFormat.month,
+              calendarStyle: CalendarStyle(
+                todayColor: Colors.orange,
+                selectedColor: Theme.of(context).primaryColor,
+                todayStyle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.0,
+                  color: Colors.white,
                 ),
               ),
-              SizedBox(height: 20.0),
-              Container(
-                height: 58.0,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: days.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return CalendarDates(
-                      day: days[index],
-                      date: dates[index],
-                      dayColor: index == 0 ? LightColors.kRed : Colors.black54,
-                      dateColor:
-                          index == 0 ? LightColors.kRed : LightColors.kDarkBlue,
-                    );
-                  },
+              headerStyle: HeaderStyle(
+                centerHeaderTitle: true,
+                formatButtonDecoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(20.0),
                 ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: ListView.builder(
-                            itemCount: time.length,
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemBuilder: (BuildContext context, int index) =>
-                                Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 15.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  '${time[index]} ${time[index] > 8 ? 'PM' : 'AM'}',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 20,
-                        ),
-                        Expanded(
-                          flex: 5,
-                          child: ListView(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            children: <Widget>[
-                              _dashedText(),
-                              TaskContainer(
-                                title: 'Project Research',
-                                subtitle:
-                                    'Discuss with the colleagues about the future plan',
-                                boxColor: LightColors.kLightYellow2,
-                              ),
-                              _dashedText(),
-                              TaskContainer(
-                                title: 'Work on Medical App',
-                                subtitle: 'Add medicine tab',
-                                boxColor: LightColors.kLavender,
-                              ),
-                              TaskContainer(
-                                title: 'Call',
-                                subtitle: 'Call to david',
-                                boxColor: LightColors.kPalePink,
-                              ),
-                              TaskContainer(
-                                title: 'Design Meeting',
-                                subtitle:
-                                    'Discuss with designers for new task for the medical app',
-                                boxColor: LightColors.kLightGreen,
-                              ),
-                            ],
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
+                formatButtonTextStyle: TextStyle(
+                  color: Colors.white,
                 ),
+                formatButtonShowsNext: false,
               ),
-            ],
-          ),
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              onDaySelected: (date, events){
+                setState(() {
+                  _selectedEvents = events;
+                });
+              },
+//              builders: CalendarBuilders(
+////                selectedDayBuilder: (context,date,events) => Text
+////                  (date.day.toString())
+////              ),
+              calendarController: _controller,
+              ),
+            ... _selectedEvents.map((event) => ListTile(
+              title: Text(event),
+            )),
+          ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: _showAddDialog,
+      )
+
+    );
+  }
+  _showAddDialog(){
+    showDialog(
+        context: context,
+      builder: (context) => AlertDialog(
+        content: TextField(
+          controller: _eventController,
+        ),
+        actions: <Widget>[
+          FlatButton(
+            child: Text("Save"),
+            onPressed: (){
+              //6:48
+              if(_eventController.text.isEmpty) return;
+              setState(() {
+              if(_events[_controller.selectedDay] != null){
+                _events[_controller.selectedDay].add(_eventController.text);
+              }else{
+                _events[_controller.selectedDay] = [_eventController.text];
+              }
+              prefs.setString('events', json.encode(encodeMap(_events)));
+              _eventController.clear();
+              Navigator.pop(context);
+              });
+            },
+          )
+        ],
+      )
     );
   }
 }

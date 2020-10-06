@@ -17,16 +17,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Mon agenda',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.amber,
         textTheme: Theme.of(context).textTheme.apply(
               bodyColor: LightColors.kDarkBlue,
               displayColor: LightColors.kDarkBlue,
               fontFamily: 'Poppins'
             ),
       ),
-      home: HomePage(),
+      home: HomePage(title: 'Mon agenda'),
       debugShowCheckedModeBanner: false,
     );
   }
